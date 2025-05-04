@@ -233,7 +233,9 @@ const changeCurrentPassword = asyncHandler(async(req,res) => {
 
     await user.save({ validateBeforeSave: false })
 
-    return res.status(200).json(
+    return res
+    .status(200)
+    .json(
         new ApiResponse(200, {}, "Password changed successfully")
     )
 })
@@ -281,7 +283,14 @@ const updateUserAvatar = asyncHandler(async(req,res) => {
     if(!avatar.url){
         throw new ApiError(400, "Error while uploading avatar")
     }
-
+    
+    // delete old avatar from cloudinary
+    const oldAvatar = req.user?.avatar
+    if(oldAvatar){
+        const publicId = oldAvatar.split("/").pop().split(".")[0]
+        await deleteFromCloudinary(publicId)
+    }
+    
     const user = User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -293,6 +302,8 @@ const updateUserAvatar = asyncHandler(async(req,res) => {
             new: true
         }
     ).select("-password")
+
+
 
     return res
     .status(200)
